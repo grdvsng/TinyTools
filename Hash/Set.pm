@@ -1,111 +1,183 @@
 package TinyTools::Hash::Set;
 {
-    use strict;
-    use warnings;
+    use Moose;
 
     use Carp;
+    use Digest::MD5;
     use Data::Dumper;
+    use Storable qw(dclone);
+    use TinyTools::Array::Utils;
     use feature qw( signatures );
+    use TinyTools::Digest::MD5 qw( md5sum );
 
     use overload
-        '""' => \&toString;
+        '""' => \&to_string,
+        '+'  => \&merge,
+        '@{}' => sub { @{ $_[0]->to_array } };
 
-    sub new( $cls )
+    has 'current_position' => ( 
+        is      => 'rw', 
+        isa     => 'Int', 
+        default => 0, 
+        reader  => '_get_current_position',
+        writer  => '_set_current_position'  
+    );
+
+    has 'is_empty' => (
+        is      => 'rw',
+        isa     => 'Bool',
+        default => 1, 
+        writer  => '_set_is_empty'  
+    );
+
+    has 'length' => ( 
+        is      => 'rw', 
+        isa     => 'Int', 
+        default => 0,                         
+        writer  => '_set_length',
+    );
+    
+    has 'store' => ( 
+        is      => 'rw', 
+        isa     => 'HashRef', 
+        default => sub { { } }, 
+        reader  => '_get_store', 
+        writer  => '_set_store',
+        trigger => sub {
+            my ( $self, $store ) = @_;
+            my $len              = scalar( keys( %$store ) );
+            my $pos              = $self->_get_current_position + 1;
+
+            $self->_set_current_position( $pos  );
+            $self->_set_is_empty        ( !$len );
+            $self->_set_length          ( $len  );
+        }                        
+    );
+
+    sub _contains( $self, $key )
     {
-        return bless( {
-            _store => { },
-            _current_position => 0,
-            _length => 0,
-        }, $cls );
+        my $store = $self->_get_store;
+
+        return exists $store->{$key};
     }
 
     sub contains( $self, $value )
     {
-        my $store = $self->{_store};
+        my $key = ref $value ? md5sum( $value ) : $value;
 
-        return exists $store->{$value};
+        return $self->_contains( $key );
     }
 
     sub clear( $self )
     {
-        $self->{_store} = {};
-        $self->{_length} = 0;
+        $self->_set_store( { } );
     }
 
-    sub insert( $self, $value )
+    sub insert( $self, $value, $then=undef )
     {
-        my $store = $self->{_store};
+        my $key = ref $value ? md5sum( $value ) : $value;
 
-        if ( !$self->contains($value) )
+        if ( !$self->_contains($key) )
         {
-            $store->{$value} = $self->{_current_position};
-            $self->{_current_position} += 1;
-            $self->{_length} += 1;
+            $then->( $value ) if $then;
+            
+            my $store = $self->_get_store;
+
+            $store->{$key} = {
+                position => $self->_get_current_position,
+                value    => ref $value ? dclone( $value ) : $value,
+            };
+
+            $self->_set_store( $store );
         }
     }
 
     sub replace( $self, $value, $newValue )
     {
-        my $store = $self->{_store};
+        my $store  = $self->_get_store;
+        my $oldKey = ref $value    ? md5sum( $value    ) : $value;
+        my $key    = ref $newValue ? md5sum( $newValue ) : $newValue;
 
-        if ( !$self->contains($value) )
+        if ( !$self->_contains($oldKey) )
         {
             confess Dumper($value)." not exists!";
         } else {
-            my $position = delete $store->{$value};
+            my $oldValue = delete $store->{$oldKey};
 
-            $store->{$newValue} = $position;
+            $store->{$key} = {
+                position => $oldValue->{position},
+                value    => ref $newValue ? dclone( $newValue ) : $newValue,
+            };
         }
-    }
 
-    sub isEmpty( $self )
-    {
-        my $store = $self->{_store};
-
-        return $self->length == 0;
-    }
-
-    sub length( $self )
-    {
-        return $self->{_length};
+        $self->_set_store( $store );
     }
 
     sub remove( $self, $value )
     {
-        my $store = $self->{_store};
+        my $store = $self->_get_store;
+        my $key   = ref $value ? md5sum( $value ) : $value;
 
-        if ( $self->contains($value) )
+        if ( $self->_contains($key) )
         {
-            my $position = delete $store->{$value};
-            
-            $self->{_length} -= 1;
+            my $item = delete $store->{$key};
 
-            return $value;
+            $self->_set_store( $store );
+
+            return $item->{value};
         }
 
         return undef;
     }
 
-    sub toArray( $self )
+    sub to_array( $self )
     {
-        my $store = $self->{_store};
-        my @data  = sort( { $store->{$a} > $store->{$b} } keys( %$store ) );
+        my $store   = $self->_get_store;
+        my @data    = values( %$store );
+        my @result  = ( );
+        my @temp    = ( );
+        my $started = 0;
 
-        return \@data;
+        while ( my $item = pop( @data ) )
+        {
+            my $pushed = 0;
+            my @store = ( );
+            
+            for ( my $i=0; $i < scalar( @temp ); $i++ )
+            {
+                my $position = $temp[ $i ];
+
+                if ( $position > $item->{position} )
+                {
+                    TinyTools::Array::Utils::splice( $i, 0, $item->{position}, \@temp   ); 
+                    TinyTools::Array::Utils::splice( $i, 0, $item->{value}   , \@result ); 
+
+                    $pushed = 1;
+                    last;
+                } 
+            }
+
+            if ( !$pushed )
+            {
+                push( @result, $item->{value}    );
+                push( @temp  , $item->{position} );
+            }
+        }
+
+        return \@result;
     }
 
-    sub toString( $self )
+    sub to_string( $self )
     {
+        my $terse = $Data::Dumper::Terse;
+
         $Data::Dumper::Terse = 1;
 
-        return Dumper( $self->toArray );
-    }
+        my $text = Dumper( $self->toArray );
 
-    sub DESTROY( $self )
-    {
-        $self->{_store} = undef;
-        $self->{_current_position} = undef;
-        $self->{_length} = undef;
+        $Data::Dumper::Terse = $terse;
+
+        return $text;
     }
 };
 1;
