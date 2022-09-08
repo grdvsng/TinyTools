@@ -6,9 +6,9 @@ package TinyTools::File::Utils;
     use JSON::PP;
     use Carp     'confess';
     use Exporter 'import';
-    use feature  'signatures';
+    use feature  qw( signatures say );
 
-    our @EXPORT_OK = qw( read_file read_json write_file write_json );
+    our @EXPORT_OK = qw( read_file read_json write_file write_json read_file_line );
 
     sub read_file( $path, $encoding="UTF-8" )
     {
@@ -17,6 +17,29 @@ package TinyTools::File::Utils;
         open(my $fh,"<:encoding($encoding)", $path ) or confess "Error opening $path: $!";
 
         $content .= $_ while ( <$fh> );
+
+        close( $fh );
+
+        return $content;
+    }
+
+    sub read_file_line( $path, $line=0, $encoding="UTF-8" )
+    {
+        my $content = '';
+        my $current = 1;
+
+        open(my $fh,"<:encoding($encoding)", $path ) or confess "Error opening $path: $!";
+
+        while ( <$fh> )
+        {
+            if ( $line == $current )
+            {
+                $content = $_;
+                last;
+            }
+
+            $current++;
+        }
 
         close( $fh );
 
