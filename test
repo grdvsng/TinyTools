@@ -1,0 +1,11 @@
+#! /usr/bin/env sh
+
+WORKDIR=$(pwd)
+
+export PERL5LIB=$WORKDIR/lib
+
+perl Makefile.PL
+make
+cover -delete
+HARNESS_PERL_SWITCHES=-MDevel::Cover make test TEST_FILES='t/*/*/*.t'
+cover

@@ -9,9 +9,8 @@ package TinyTools::Digest::MD5;
 
     our @EXPORT_OK = qw( md5sum );
 
-    sub md5sum( $item )
-    {
-        my $ctx = Digest::MD5->new;
+    sub md5sum ($item) {
+        my $ctx   = Digest::MD5->new;
         my $terse = $Data::Dumper::Terse;
 
         $Data::Dumper::Terse = 1;

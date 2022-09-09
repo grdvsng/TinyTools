@@ -1,0 +1,6 @@
+Revision history for Perl extension TinyTools.
+
+0.01  Fri Sep  9 23:33:34 2022
+	- original version; created by h2xs 1.23 with options
+		-AX -n TinyTools -b 5.32.1
+

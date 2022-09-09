@@ -1,0 +1,7 @@
+--state=hot,fast,save
+-j9
+-b 
+--state=last
+-v
+-I t/*/*/*.t
+--source pgTAP --pgtap-option pset=format=html --pgtap-option pset=border=2

@@ -1,1 +1,9 @@
 .env
+.prove
+.blib
+Makefile
+Manifest.*
+MYMETA.*
+blib
+pm_to_blib
+cover_db
