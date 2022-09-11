@@ -7,5 +7,5 @@ export PERL5LIB=$WORKDIR/lib
 perl Makefile.PL
 make
 cover -delete
-HARNESS_PERL_SWITCHES=-MDevel::Cover make test TEST_FILES='t/*/*/*.t'
+HARNESS_PERL_SWITCHES=-MDevel::Cover make test TEST_FILES='t/*/*/*.t, t/*/*/*/*.t'
 cover
