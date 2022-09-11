@@ -69,11 +69,10 @@ package TinyTools::Array::Utils;
         my $elem  = shift;
         my @array = @_;
 
-        for ( my $i = 0; $i < $#array; $i++ ) {
+        for ( my $i = 0; $i < scalar(@array); $i++ ) {
             my $value = $array[$i];
 
-            if (   ( !ref $value && $value eq $elem )
-                || ( ref $value && $value == $elem ) )
+            if ( $value eq $elem )
             {
                 return $i;
             }

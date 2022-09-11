@@ -1,17 +1,26 @@
 package TinyTools::Event::Emiter;
 {
     use Moose;
-    use Future;
+    use Data::Dumper;
+    use feature 'say';
     use Carp 'confess';
     use IO::Async::Loop;
-    use IO::Async::Function;
     use MooseX::ClassAttribute;
     use TinyTools::Event::Listener;
     use TinyTools::Array::Utils qw( index_of );
 
+    has 'loop' => (
+        isa     => 'IO::Async::Loop',
+        is      => 'ro',
+        default => sub {
+            return IO::Async::Loop->new;
+
+        }
+    );
+
     has 'listeners' => (
         is      => 'rw',
-        isa     => 'HashRef[Str,ArrayRef[TinyTools::Event::Listener]]',
+        isa     => 'HashRef',
         writer  => '_set_listeners',
         default => sub { return {}; },
     );
@@ -40,7 +49,7 @@ package TinyTools::Event::Emiter;
         if ( scalar(@$supported_events) > 0
             && index_of( $event, @$supported_events ) == -1 )
         {
-            confess 'Event is not supporting';
+            confess "Event '$event' is not supporting";
         }
 
         return $event;
@@ -65,9 +74,9 @@ package TinyTools::Event::Emiter;
                 "Event $event allready has $total listeners, max listeners for event is "
                 . $self->event_listeners_max_count;
         } else {
-            push( @$listeners, $handler );
+            push( @$listeners, $listener );
 
-            $self->set_listeners(
+            $self->_set_listeners(
                 { %{ $self->listeners }, "$event" => $listeners, } );
         }
 
@@ -77,7 +86,7 @@ package TinyTools::Event::Emiter;
     sub remove_all_listeners {
         my $self = shift;
 
-        $self->set_listeners( {} );
+        $self->_set_listeners( {} );
     }
 
     sub on {
@@ -97,32 +106,17 @@ package TinyTools::Event::Emiter;
     }
 
     sub emit {
-        my $self      = shift;
-        my $event     = $self->check_event(shift);
-        my @params    = @_;
-        my @listeners = @{ $self->listeners->{$event} || [] };
-        my $loop      = IO::Async::Loop->new;
-        my @promises  = map( {
-                my $function = IO::Async::Function->new(
-                    code => sub {
-                        $_->handler(@_);
+        my $self   = shift;
+        my $event  = $self->check_event(shift);
+        my @params = @_;
+        my @listeners
+            = grep( { !!$_ } @{ $self->listeners->{$event} || [] } );
 
-                        if ( $_->is_once ) {
-                            $_->removed(1);
-                        }
-                    }
-                );
+        $_->handler->(@params) for @listeners;
 
-                $loop->add($function);
-
-                $function->call( args => \@params )
-        } @listeners );
-
-        Future->wait_all(@promises)->await;
-
-        $self->set_listeners(
+        $self->_set_listeners(
             {   %{ $self->listeners },
-                "$event" => [ grep( { !$_->removed } @listeners ) ],
+                "$event" => [ grep( { $_->is_regular } @listeners ) ],
             }
         );
 
@@ -136,7 +130,7 @@ package TinyTools::Event::Emiter;
         my @listeners = grep( { $_ != $handler }
             @{ $self->listeners->{$event} || [] } );
 
-        $self->set_listeners(
+        $self->_set_listeners(
             { %{ $self->listeners }, "$event" => \@listeners, } );
 
         return $self;
