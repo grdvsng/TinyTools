@@ -8,3 +8,5 @@ blib
 pm_to_blib
 cover_db
 actions-runner
+*.tar.gz
+dist
