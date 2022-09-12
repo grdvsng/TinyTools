@@ -18,7 +18,7 @@ jobs:
       - run: perl Makefile.PL && make && make dist
       - run: export DIST_ARCHIVE=$(ls -l *.tar.gz | awk '{print $9}') 
       - run: mkdir dist && tar -xz -f $DIST_ARCHIVE -C dist --strip-components 1
-      - run: cd dist && cpan . && cd ../
+      - run: cd dist && cpan --notest . && cd ../
       - name: Tests
         uses: actions/checkout@v3
       - run: sudo ./test 
