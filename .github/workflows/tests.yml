@@ -12,11 +12,13 @@ jobs:
       - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
       - run: echo "🖥️ The workflow is now ready to test your code on the runner."
       - name: Test build
+        uses: actions/checkout@v3
       - run: sudo apt-get install perl cpan make -y
       - run: perl Makefile.PL && make && make dist
       - run: export DIST_ARCHIVE=$(ls -l *.tar.gz | awk '{print $9}') 
       - run: mkdir dist && tar -xz -f $DIST_ARCHIVE -C dist --strip-components 1
       - run: cd dist && cpan . && cd ../
       - name: Tests
+        uses: actions/checkout@v3
       - run: sudo ./test 
       - run: echo "🍏 This job's status is ${{ job.status }}."
