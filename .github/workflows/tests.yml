@@ -13,8 +13,8 @@ jobs:
       - run: echo "🖥️ The workflow is now ready to test your code on the runner."
       - name: Test build
         uses: actions/checkout@v3
-      - run: sudo apt-get update && sudo apt-get install perl make -y && sudo up
-      - run: perl -MCPAN -e 'upgrade'
+      - run: sudo apt-get update && sudo apt-get install perl make -y
+      - run: sudo perl -MCPAN -e 'upgrade'
       - run: perl Makefile.PL && make && make dist
       - run: export DIST_ARCHIVE=$(ls -l *.tar.gz | awk '{print $9}') 
       - run: mkdir dist && tar -xz -f $DIST_ARCHIVE -C dist --strip-components 1
