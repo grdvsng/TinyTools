@@ -1,4 +1,5 @@
 # TinyTools version 0.01
+Useful utilities for processing large requests, working with OOP, web requests.
 
 # INSTALLATION
 
