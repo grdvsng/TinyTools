@@ -1,7 +1,8 @@
 # TinyTools version 0.01
 
 Useful utilities for processing large requests, working with OOP, web requests.
-+ Some universal examples
+
+- Some universal examples
 
 # INSTALLATION
 
@@ -20,3 +21,4 @@ make install
 2. [Class Accessors](t/TinyTools/Class/Accessor.t)
 3. [Data processing from the database](t/TinyTools/DB/Query/Stream.t)
 4. [Avoid memory leaks in loops with cross-references](t/TinyTools/avoid-memory-leaks-in-loops-whith-cross-references.t)
+5. [Preventing memory leaks in loops with objects containing subroutines](t/TinyTools/preventing-memory-leaks-in-loops-with-objects-containing-subroutines.t)
