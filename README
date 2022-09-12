@@ -3,15 +3,13 @@
 # INSTALLATION
 
 To install this module type the following:
-```shell
+```console
 perl Makefile.PL
 make
 ./test 
 make install
 ```
-
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself, either Perl version 5.32.1 or,
-at your option, any later version of Perl 5 you may have available.
-
-
+# Examples
+1. [Remove duplicates from big hash](t/TinyTools/Hash/Utils.t)
+2. [Class Accessors](t/TinyTools/Class/Accessor.t)
+3. [Data processing from the database](t/TinyTools/DB/Query/Stream.t)
