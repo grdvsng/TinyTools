@@ -1,20 +1,25 @@
 #! /usr/bin/env perl
 use strict;
+use Future;
 use warnings;
 use Test::More;
 use Data::Dumper;
 use feature 'say';
+use IO::Async::Loop;
 use Test::Exception;
 use String::Util 'trim';
+use IO::Async::Timer::Countdown;
 
-require_ok('TinyTools::HTTP::Request');
+require_ok('TinyTools::HTTP::Async::Request');
 
-my $get  = TinyTools::HTTP::Request->GET("http://metacpan.org/search");
-my $post = TinyTools::HTTP::Request->POST("http://metacpan.org")
+my $get
+    = TinyTools::HTTP::Async::Request->GET("http://metacpan.org/search");
+my $post = TinyTools::HTTP::Async::Request->POST("http://metacpan.org")
     ->json( { hello => 'world' } );
-my $put = TinyTools::HTTP::Request->PUT("http://metacpan.org/")
+my $put = TinyTools::HTTP::Async::Request->PUT("http://metacpan.org/")
     ->xml( { hello => 'world' } );
-my $delete = TinyTools::HTTP::Request->DELETE("http://metacpan.org/");
+my $delete
+    = TinyTools::HTTP::Async::Request->DELETE("http://metacpan.org/");
 
 is( $get->method,    'GET',    'Method shoud eq GET' );
 is( $post->method,   'POST',   'Method shoud eq POST' );
@@ -49,14 +54,31 @@ is( trim( $post->as_string ),
     'Check POST request'
 );
 
-ok( my $response = TinyTools::HTTP::Request->GET(
+my $error = undef;
+my $end   = 0;
+
+ok( my $request = TinyTools::HTTP::Async::Request->GET(
         "http://docs.adaptivecomputing.com/9-0-1/MWS/Content/topics/moabWebServices/7-references/clientCodeSamples/perl.htm"
-    )->set_timeout(1)->send,
+    )->set_timeout(1),
     'Make real GET request'
 );
 
-is( $response->status_code, 200, 'Check valide response status code' );
-is( $response->status_message, 'OK',
-    'Check valide response status message' );
+my $response_chunks = '';
+
+$request->once(
+    'response',
+    sub {
+        my $response = shift;
+
+        $response->on( 'data', sub { $response_chunks .= shift; } );
+    }
+)->on( 'end', sub { $end = 1; } )
+    ->on( 'error', sub { $error = shift; say $error } );
+
+ok( my $response = $request->send->await->result, 'Wait result' );
+
+is( $response->status_code, 200, 'Check status code' );
+is( $response->body, $response_chunks,
+    'Check that catched by handler content eq thet handled via listener' );
 
 &done_testing;

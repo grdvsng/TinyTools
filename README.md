@@ -23,3 +23,4 @@ make install
 4. [Avoid memory leaks in loops with cross-references](t/TinyTools/avoid-memory-leaks-in-loops-whith-cross-references.t)
 5. [Preventing memory leaks in loops with objects containing subroutines](t/TinyTools/preventing-memory-leaks-in-loops-with-objects-containing-subroutines.t)
 6. [HTTP Sync request](t/TinyTools/HTTP/Request.t)
+7. [HTTP Async request](t/TinyTools/HTTP/Async/Request.t)

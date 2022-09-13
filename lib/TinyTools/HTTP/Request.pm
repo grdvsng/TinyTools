@@ -4,14 +4,15 @@ package TinyTools::HTTP::Request;
     use Moose;
     use JSON::PP;
     use XML::Hash;
-    use IO::Socket;
     use Data::Dumper;
-    use Log::Log4perl;
     use feature 'say';
     use Carp 'confess';
+    use IO::Socket::INET;
+    use String::Util 'trim';
     use TinyTools::HTTP::Response;
     use TinyTools::HTTP::Constants;
     use Types::Standard qw(Enum);
+    use Log::Log4perl   qw( :easy );
     use URI::Split      qw(uri_join);
     use MooseX::Types::PortNumber 'PortNumber';
 
@@ -43,7 +44,12 @@ package TinyTools::HTTP::Request;
         }
     );
 
-    has 'timeout' => ( is => 'ro', isa => 'Int', default => 2 );
+    has 'timeout' => (
+        is      => 'rw',
+        isa     => 'Int',
+        default => 2,
+        writer  => '_set_timeout'
+    );
 
     has 'socket' => (
         is      => 'ro',
@@ -53,9 +59,9 @@ package TinyTools::HTTP::Request;
             my $self = shift;
 
             $self->logger->debug(
-                "Crete socker " . $self->host . ":" . $self->port );
+                "Create socket " . $self->host . ":" . $self->port );
 
-            return new IO::Socket::INET(
+            return IO::Socket::INET->new(
                 PeerAddr => $self->host,
                 PeerPort => $self->port . '',
                 Proto    => 'tcp',
@@ -83,6 +89,8 @@ package TinyTools::HTTP::Request;
         is      => 'ro',
         isa     => 'Log::Log4perl::Logger',
         default => sub {
+            Log::Log4perl->easy_init();
+
             my $logger
                 = Log::Log4perl->get_logger( '' . ref(__PACKAGE__) );
 
@@ -95,6 +103,14 @@ package TinyTools::HTTP::Request;
             return $logger;
         }
     );
+
+    sub set_timeout {
+        my $self = shift;
+
+        $self->_set_timeout(shift);
+
+        return $self;
+    }
 
     sub set_header {
         my $self   = shift;
@@ -126,7 +142,7 @@ package TinyTools::HTTP::Request;
         $self->set_header( 'Content-length', length( $self->data ), 1 )
             if $self->data;
 
-        for my $title ( keys( %{ $self->headers } ) ) {
+        for my $title ( sort( keys( %{ $self->headers } ) ) ) {
             my $values = $self->get_header($title);
             my @values = ref $values eq "ArrayRef" ? @$values : ($values);
 
@@ -151,22 +167,41 @@ package TinyTools::HTTP::Request;
         return join( '', @{ $_[0]->chunks } );
     }
 
+    sub throw {
+        my $self    = shift;
+        my $message = shift;
+
+        $self->logger->warn($message);
+
+        confess $message;
+    }
+
     sub send {
         my $self = shift;
         my $sock = $self->socket;
 
-        confess "Could not create socket: $!" unless $sock;
+        $self->throw("Could not create socket: $!") unless $sock;
 
-        for my $chunk ( @{ $self->chunks } ) {
-            $self->logger->debug($chunk);
+        my $response = undef;
 
-            print( $sock $chunk );
-        }
+        eval {
+            for my $chunk ( @{ $self->chunks } ) {
+                $self->logger->debug($chunk) if trim($chunk);
 
-        my $response
-            = TinyTools::HTTP::Response->new( { socket => $sock } );
+                print( $sock $chunk );
+            }
+
+            $response
+                = TinyTools::HTTP::Response->new( { socket => $sock } );
+
+            $response->handle;
+        };
+
+        my $error = $@;
 
         close($sock);
+
+        $self->throw($error) if $error;
 
         return $response;
     }

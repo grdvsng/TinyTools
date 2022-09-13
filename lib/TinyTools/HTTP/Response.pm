@@ -12,7 +12,12 @@ package TinyTools::HTTP::Response {
 
     has 'socket' => ( is => 'ro', isa => 'IO::Socket', required => 1 );
 
-    has 'body' => ( is => 'ro', isa => 'Str', writer => '_set_body', default => '' );
+    has 'body' => (
+        is      => 'ro',
+        isa     => 'Str',
+        writer  => '_set_body',
+        default => ''
+    );
 
     has 'headers' => (
         is      => 'rw',
@@ -29,11 +34,12 @@ package TinyTools::HTTP::Response {
         },
     );
 
+    has 'handle' =>
+        ( is => 'ro', lazy => 1, default => sub { $_[0]->_read } );
+
     sub new {
         my $cls  = shift;
         my $self = $cls->SUPER::new(@_);
-
-        $self->_read;
 
         return $self;
     }
