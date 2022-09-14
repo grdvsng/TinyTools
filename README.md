@@ -22,5 +22,7 @@ make install
 3. [Data processing from the database](t/TinyTools/DB/Query/Stream.t)
 4. [Avoid memory leaks in loops with cross-references](t/TinyTools/avoid-memory-leaks-in-loops-whith-cross-references.t)
 5. [Preventing memory leaks in loops with objects containing subroutines](t/TinyTools/preventing-memory-leaks-in-loops-with-objects-containing-subroutines.t)
-6. [HTTP Sync request](t/TinyTools/HTTP/Request.t)
-7. [HTTP Async request](t/TinyTools/HTTP/Async/Request.t)
+6. HTTP requests
+    6.1 [HTTP Sync request](t/TinyTools/HTTP/Request.t)
+    6.2 [HTTP Async request](t/TinyTools/HTTP/Async/Request.t)
+7. [How inheritance works in Perl with an example](t/TinyTools/Inheritance.t) 
