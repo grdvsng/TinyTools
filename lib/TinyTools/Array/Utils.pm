@@ -72,8 +72,7 @@ package TinyTools::Array::Utils;
         for ( my $i = 0; $i < scalar(@array); $i++ ) {
             my $value = $array[$i];
 
-            if ( $value eq $elem )
-            {
+            if ( $value eq $elem ) {
                 return $i;
             }
         }

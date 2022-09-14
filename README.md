@@ -26,3 +26,4 @@ make install
     1. [HTTP Sync request](t/TinyTools/HTTP/Request.t)
     2. [HTTP Async request](t/TinyTools/HTTP/Async/Request.t)
 7. [How inheritance works in Perl with an example](t/TinyTools/Inheritance.t) 
+8. [Efficient search in sorted arrays of infinite numbers](t/TinyTools/Array/Int.t)
